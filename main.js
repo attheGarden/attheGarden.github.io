@@ -73,7 +73,7 @@ while (balls.length < 21) {
         size
     )
     balls.push(ball)
-}ß
+}
 
 
 function loop() {
