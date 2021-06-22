@@ -1,92 +1,128 @@
-const canvas = document.querySelector('canvas')
-const ctx = canvas.getContext('2d')
+let canvas = document.querySelector("canvas");
+let ctx = canvas.getContext("2d");
+let ballRadius = 10;
+let x = canvas.width / 2;
+let y = canvas.height - 30;
+let dx = 2;
+let dy = -2;
+let paddleHeight = 10;
+let paddleWidth = 75;
+let paddleX = (canvas.width - paddleWidth) / 2;
+let rightPressed = false;
+let leftPressed = false;
+let brickRowCount = 3
+let brickColumnCount = 5
+let brickWidth = 75
+let brickHeight = 20
+let brickPadding = 10
+let brickOffsetTop = 30
+let brickOffsetLeft = 30
 
-const width = canvas.width = window.innerWidth
-const height = canvas.height = window.innerHeight
+document.addEventListener("keydown", keyDownHandler, false);
+document.addEventListener("keyup", keyUpHandler, false);
 
-
-function Ball(x, y, velX, velY, color, size) {
-    this.x = x;
-    this.y = y;
-    this.velX = velX;
-    this.velY = velY;
-    this.color = color;
-    this.size = size;
+function keyDownHandler(e) {
+    if (e.keyCode == 39) {
+        rightPressed = true;
+    } else if (e.keyCode == 37) {
+        leftPressed = true;
+    }
 }
 
-function random(min, max) {
-    const num = Math.floor(Math.random() * (max - min + 1)) + min;
-    return num;
+function keyUpHandler(e) {
+    if (e.keyCode == 39) {
+        rightPressed = false;
+    } else if (e.keyCode == 37) {
+        leftPressed = false;
+    }
 }
 
-Ball.prototype.draw = function () {
-    ctx.beginPath()
-    ctx.fillStyle = this.color
-    ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI)
-    ctx.fill()
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
 }
 
-Ball.prototype.update = function () {
-    if ((this.x + this.size) > width) {
-        this.velX = -(this.velX)
-    }
-    if ((this.x - this.size) <= 0) {
-        this.velX = -(this.velX)
-    }
-
-    if ((this.y + this.size) >= height) {
-        this.velY = -(this.velY)
-    }
-
-    if ((this.y - this.size) <= 0) {
-        this.velY = -(this.velY)
-    }
-
-    this.x += this.velX
-    this.y += this.velY
+function drawPaddle() {
+    ctx.beginPath();
+    ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
 }
 
-Ball.prototype.collisionDetect = function () {
-    for (let j = 0; j < balls.length; j++) {
-        if (!(this === balls[j])) {
-            const dx = this.x - balls[j].x;
-            const dy = this.y - balls[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+let bricks = []
+for (let c = 0; c < brickColumnCount; c++) {
+    bricks[c] = [];
+    for (let r = 0; r < brickRowCount; r++) {
+        bricks[c][r] = {x: 0, y: 0, status: 1}
+    }
+}
 
-            if (distance < this.size + balls[j].size) {
-                balls[j].color = this.color = 'rgb(' + random(0, 255) + ',' + random(0, 255) + ',' + random(0, 255) + ')';
+function drawBricks() {
+    for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+            if (bricks[c][r].status === 1) {
+                let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                bricks[c][r].x = brickX;
+                bricks[c][r].y = brickY;
+                ctx.beginPath();
+                ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.closePath();
             }
         }
     }
 }
 
-let balls = []
-
-while (balls.length < 21) {
-    let size = random(10, 30)
-    let ball = new Ball(
-        random(0 + size, width - size),
-        random(0 + size, height - size),
-        random(-7, 7),
-        random(-7, 7),
-        'rgb(' + random(0, 255) + ',' + random(0, 255) + ',' + random(0, 255) + ')',
-        size
-    )
-    balls.push(ball)
+function collisionDetection() {
+    for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+            let b = bricks[c][r];
+            if (b.status == 1) {
+                if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                    dy = -dy;
+                    b.status = 0;
+                }
+            }
+        }
+    }
 }
 
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBricks()
+    drawBall()
+    drawPaddle()
+    collisionDetection()
 
-function loop() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(0, 0, width, height);
-
-    for (let i = 0; i < balls.length; i++) {
-        balls[i].draw();
-        balls[i].update();
-        balls[i].collisionDetect();
+    if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+        dx = -dx;
+    }
+    if (y + dy < ballRadius) {
+        dy = -dy;
+    } else if (y + dy > canvas.height - ballRadius) {
+        if (x > paddleX && x < paddleX + paddleWidth) {
+            dy = -(dy * 1.2);
+            console.log(dy)
+        } else {
+            location.reload();
+            alert("GAME OVER");
+        }
     }
 
-    requestAnimationFrame(loop);
+    if (rightPressed && paddleX < canvas.width - paddleWidth) {
+        paddleX += 7;
+    } else if (leftPressed && paddleX > 0) {
+        paddleX -= 7;
+    }
+
+    x += dx;
+    y += dy;
 }
 
-loop()
+setInterval(draw, 10);
