@@ -107,7 +107,7 @@ function draw() {
         dy = -dy;
     } else if (y + dy > canvas.height - ballRadius) {
         if (x > paddleX && x < paddleX + paddleWidth) {
-            dy = -(dy * 1.2);
+            dy = -(dy * 3);
             console.log(dy)
         } else {
             location.reload();
@@ -123,6 +123,18 @@ function draw() {
 
     x += dx;
     y += dy;
+    requestAnimationFrame(draw);
 }
+draw()
 
-setInterval(draw, 10);
+function addMethod( object, name, func ) {
+    var old = object[name];
+    object[name] = function(){
+        console.log(arguments)
+        if(func.length === arguments.length){
+            return func.apply(this,arguments);
+        }else{
+            return old.apply(this,arguments);
+        }
+    }
+}
